@@ -1,0 +1,15 @@
+{
+  "name": "awesome-diy",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build-markdown": "node scripts/build-markdown.js",
+    "consolidate-json": "node scripts/consolidate-json.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/johansatge/awesome-diy.git"
+  },
+  "keywords": [],
+  "license": "MIT"
+}
