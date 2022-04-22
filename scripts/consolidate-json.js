@@ -20,7 +20,8 @@ try {
 async function run() {
   const channelsJson = JSON.parse(await fsp.readFile(channelsPath, 'utf8'))
   const consolidatedChannels = []
-  for (const channel of channelsJson.channels) {
+  for (const [index, channel] of channelsJson.entries()) {
+    process.stdout.write(`Fetching channel ${index + 1}/${channelsJson.length}\r`)
     const freshChannelData = await fetchChannelData(channel.id)
     channel.thumbnail = freshChannelData.snippet.thumbnails.medium.url
     channel.name = freshChannelData.snippet.localized.title
@@ -28,11 +29,12 @@ async function run() {
     channel.country = freshChannelData.snippet.country || ''
     consolidatedChannels.push(channel)
   }
-  consolidatedChannels.sort((a, b) => a.name > b.name ? 1 : (a.name < b.name ? -1 : 0))
-  await fsp.writeFile(channelsPath, JSON.stringify({
-    lastupdate: new Date().toString(),
-    channels: consolidatedChannels,
-  }, null, 2), 'utf8')
+  consolidatedChannels.sort((a, b) => {
+    const aName = a.name.toLowerCase()
+    const bName = b.name.toLowerCase()
+    return aName > bName ? 1 : (aName < bName ? -1 : 0)
+  })
+  await fsp.writeFile(channelsPath, JSON.stringify(consolidatedChannels, null, 2), 'utf8')
 }
 
 function fetchChannelData(channelId) {

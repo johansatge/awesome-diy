@@ -18,7 +18,7 @@ async function run() {
   const markdown = []
   markdown.push('📷|Channel|Description')
   markdown.push('---|---|---')
-  for (const channel of channelsJson.channels) {
+  for (const channel of channelsJson) {
     const country = channel.country.length > 0 ? `(${channel.country})` : ''
     const line = [
       `<img src="${channel.thumbnail}" width="100px" alt="${channel.id}">`,
