@@ -1,5 +1,6 @@
 /**
- * - Fetch fresh YouTube data for each channel in channels.json
+ * - Fetch fresh YouTube data for new channels in channels.json (ones with an ID only)
+ *   (or all channels with "--all" option)
  * - Update channel name, description & thumbnail
  * - Reorder channels in alphabetical order
  */
@@ -10,6 +11,7 @@ const path = require('path')
 const { apiKey } = require('../.apikey.js')
 
 const channelsPath = path.join(__dirname, '../channels.json')
+const fetchAll = process.argv.includes('--all')
 
 try {
   run()
@@ -21,13 +23,21 @@ async function run() {
   const channelsJson = JSON.parse(await fsp.readFile(channelsPath, 'utf8'))
   const consolidatedChannels = []
   for (const [index, channel] of channelsJson.entries()) {
-    process.stdout.write(`Fetching channel ${index + 1}/${channelsJson.length}\r`)
+    const readablePosition = `${index + 1}/${channelsJson.length}`
+    if (channel.name && !fetchAll) {
+      consolidatedChannels.push(channel)
+      process.stdout.write(`Skipping channel ${readablePosition}\r`)
+      continue
+    }
+    process.stdout.write(`Fetching channel ${readablePosition}\r`)
     const freshChannelData = await fetchChannelData(channel.id)
-    channel.thumbnail = freshChannelData.snippet.thumbnails.medium.url
-    channel.name = freshChannelData.snippet.localized.title
-    channel.description = freshChannelData.snippet.localized.description
-    channel.country = freshChannelData.snippet.country || ''
-    consolidatedChannels.push(channel)
+    consolidatedChannels.push({
+      id: channel.id,
+      name: freshChannelData.snippet.localized.title,
+      thumbnail: freshChannelData.snippet.thumbnails.medium.url,
+      description: freshChannelData.snippet.localized.description,
+      country: freshChannelData.snippet.country || '',
+    })
   }
   consolidatedChannels.sort((a, b) => {
     const aName = a.name.toLowerCase()
