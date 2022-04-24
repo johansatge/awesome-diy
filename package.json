@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build-markdown": "node scripts/build-markdown.js",
-    "consolidate-json": "node scripts/consolidate-json.js"
+    "build": "node build.js"
   },
   "repository": {
     "type": "git",

@@ -1,25 +1,30 @@
 /**
  * - Fetch fresh YouTube data for new channels in channels.json (ones with an ID only)
- *   (or all channels with "--all" option)
+ *   (or all channels with "--fetch-all" option)
  * - Update channel name, description & thumbnail
  * - Reorder channels in alphabetical order
+ * - Update table in readme.md
  */
 
 const https = require('https')
 const fsp = require('fs').promises
 const path = require('path')
-const { apiKey } = require('../.apikey.js')
+const { apiKey } = require('./.apikey.js')
 
-const channelsPath = path.join(__dirname, '../channels.json')
-const fetchAll = process.argv.includes('--all')
+const channelsPath = path.join(__dirname, 'channels.json')
+const readmePath = path.join(__dirname, 'readme.md')
+const fetchAll = process.argv.includes('--fetch-all')
 
-try {
-  run()
-} catch(error) {
-  console.log(`Run error: ${error.message}`)
-}
+;(async () => {
+  try {
+    const channels = await consolidateChannelsJson()
+    await writeReadme(channels)
+  } catch(error) {
+    console.log(`Run error: ${error.message}`)
+  }
+})()
 
-async function run() {
+async function consolidateChannelsJson() {
   const channelsJson = JSON.parse(await fsp.readFile(channelsPath, 'utf8'))
   const consolidatedChannels = []
   for (const [index, channel] of channelsJson.entries()) {
@@ -45,6 +50,42 @@ async function run() {
     return aName > bName ? 1 : (aName < bName ? -1 : 0)
   })
   await fsp.writeFile(channelsPath, JSON.stringify(consolidatedChannels, null, 2), 'utf8')
+  return consolidatedChannels
+}
+
+async function writeReadme(channels) {
+  process.stdout.write('\nWriting readme.md\n')
+  const tableMarkdown = []
+  tableMarkdown.push('📷|Channel|Description')
+  tableMarkdown.push('---|---|---')
+  for (const channel of channels) {
+    const country = channel.country.length > 0 ? `(${channel.country})` : ''
+    const line = [
+      `<img src="${channel.thumbnail}" width="100px" alt="${channel.id}">`,
+      `[${channel.name}](https://www.youtube.com/channel/${channel.id}) ${country}`,
+      descriptionMarkup(channel.description),
+    ]
+    tableMarkdown.push(line.join('|'))
+  }
+  const fileMarkdown = await fsp.readFile(readmePath, 'utf8')
+  const tableRegex = /(<!-- CHANNELS -->\n)(.+)(\n<!-- \/CHANNELS -->)/s
+  const updatedMarkdown = fileMarkdown.replace(tableRegex, `$1${tableMarkdown.join('\n')}$3`)
+  await fsp.writeFile(readmePath, updatedMarkdown, 'utf8')
+}
+
+function descriptionMarkup(rawDescription) {
+  const maxLength = 120
+  const oneLine = (text) => text.replaceAll('\n', ' ')
+  if (rawDescription.length === 0) {
+    return '_No description_'
+  }
+  if (rawDescription.length <= maxLength) {
+    return oneLine(rawDescription)
+  }
+  const space = rawDescription.indexOf(' ', maxLength)
+  const summary = rawDescription.substring(0, space)
+  const rest = rawDescription.substring(space + 1)
+  return `<details><summary>${oneLine(summary)} [...]</summary>${oneLine(rest)}</details>`
 }
 
 function fetchChannelData(channelId) {
