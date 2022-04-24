@@ -68,9 +68,9 @@ async function writeReadme(channels) {
     tableMarkdown.push(line.join('|'))
   }
   const fileMarkdown = await fsp.readFile(readmePath, 'utf8')
-  const tableRegex = /(<!-- CHANNELS -->\n)(.+)(\n<!-- \/CHANNELS -->)/s
-  const updatedMarkdown = fileMarkdown.replace(tableRegex, `$1${tableMarkdown.join('\n')}$3`)
-  await fsp.writeFile(readmePath, updatedMarkdown, 'utf8')
+  const tableRegex = /<!-- CHANNELS -->\n.+\n<!-- \/CHANNELS -->/s
+  const newTableMarkdown = `<!-- CHANNELS -->\n${tableMarkdown.join('\n')}\n<!-- \/CHANNELS -->`
+  await fsp.writeFile(readmePath, fileMarkdown.replace(tableRegex, newTableMarkdown), 'utf8')
 }
 
 function descriptionMarkup(rawDescription) {
