@@ -56,6 +56,7 @@ async function consolidateChannelsJson() {
 async function writeReadme(channels) {
   process.stdout.write('\nWriting readme.md\n')
   const tableMarkdown = []
+  tableMarkdown.push(`_${channels.length} channels saved_ ✨`)
   tableMarkdown.push('📷|Channel|Description')
   tableMarkdown.push('---|---|---')
   for (const channel of channels) {
